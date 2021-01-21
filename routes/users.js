@@ -2,7 +2,6 @@ const router = require('express').Router();
 const path = require('path');
 const fs = require('fs');
 
-let users = [];
 const openFile = (req, res, next) => {
   fs.readFile(path.join(__dirname, '..', 'data', 'users.json'), 'utf8', (error, data) => {
     if (error) {
@@ -10,7 +9,7 @@ const openFile = (req, res, next) => {
       return;
     }
     try {
-      users = JSON.parse(data);
+      req.users = JSON.parse(data);
       next();
     } catch (parseError) {
       res.status(500).send({ message: parseError.message });
@@ -20,13 +19,14 @@ const openFile = (req, res, next) => {
 
 router.get('/', openFile);
 router.get('/', (req, res) => {
-  res.send(users);
+  console.log(req.users);
+  res.send(req.users);
 });
 
 router.get('/:id', openFile);
 router.get('/:id', (req, res) => {
   const { id } = req.params;
-  const user = users.find((item) => item._id === id);
+  const user = req.users.find((item) => item._id === id);
   if (user) {
     res.send(user);
   } else {
