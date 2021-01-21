@@ -19,7 +19,6 @@ const openFile = (req, res, next) => {
 
 router.get('/', openFile);
 router.get('/', (req, res) => {
-  console.log(req.users);
   res.send(req.users);
 });
 
