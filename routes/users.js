@@ -4,7 +4,7 @@ const fs = require('fs');
 
 let users = [];
 const openFile = (req, res, next) => {
-  fs.readFile(path.join(__dirname, '..', 'data/users.json'), 'utf8', (error, data) => {
+  fs.readFile(path.join(__dirname, '..', 'data', 'users.json'), 'utf8', (error, data) => {
     if (error) {
       res.status(500).send({ message: error.message });
       return;
