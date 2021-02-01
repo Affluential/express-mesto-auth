@@ -46,11 +46,13 @@ module.exports.likeCard = (req, res) => {
     .orFail(new Error('404'))
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      if (err.name === '404') {
-        res.status(404).send({ message: 'Карточка не найдена' });
-      } else {
-        res.status(500).send({ message: err.message });
+      if (err.message === '404') {
+        return res.status(404).send({ message: 'Карточка не найдена' });
       }
+      if (err instanceof mongoose.CastError) {
+        return res.status(400).send({ message: 'id карточки не верно' });
+      }
+      return res.status(500).send({ message: err.message });
     });
 };
 
@@ -63,10 +65,12 @@ module.exports.dislikeCard = (req, res) => {
     .orFail(new Error('404'))
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      if (err.name === '404') {
-        res.status(404).send({ message: 'Карточка не найдена' });
-      } else {
-        res.status(500).send({ message: err.message });
+      if (err.message === '404') {
+        return res.status(404).send({ message: 'Карточка не найдена' });
       }
+      if (err instanceof mongoose.CastError) {
+        return res.status(400).send({ message: 'id карточки не верно' });
+      }
+      return res.status(500).send({ message: err.message });
     });
 };
