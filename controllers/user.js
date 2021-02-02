@@ -46,13 +46,21 @@ module.exports.updateUser = (req, res) => {
     { name, about },
     { new: true, runValidators: true },
   )
+    .orFail(new Error('404'))
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else {
-        res.status(500).send({ message: err.message });
+        return res
+          .status(400)
+          .send({ message: 'Переданы некорректные данные' });
       }
+      if (err.message === '404') {
+        return res.status(404).send({ message: 'Пользователь не найден' });
+      }
+      if (err instanceof mongoose.CastError) {
+        return res.status(400).send({ message: 'id пользователя не верно' });
+      }
+      return res.status(500).send({ message: err.message });
     });
 };
 
