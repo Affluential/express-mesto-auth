@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Card = require('../models/card');
+const { BadRequest, NotFound } = require('../errors/index');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
@@ -13,9 +14,9 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные в метод создания карточки',
-        });
+        throw new BadRequest(
+          'Переданы некорректные данные в метод создания карточки',
+        );
       } else {
         res.status(500).send({ message: err.mesage });
       }
@@ -28,10 +29,10 @@ module.exports.deleteCard = (req, res) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.message === '404') {
-        return res.status(404).send({ message: 'Карточка не найдена' });
+        throw new NotFound('Карточка не найдена');
       }
       if (err instanceof mongoose.CastError) {
-        return res.status(400).send({ message: 'id карточки не верно' });
+        throw new BadRequest('id карточки не верно');
       }
       return res.status(500).send({ message: err.message });
     });
@@ -47,10 +48,10 @@ module.exports.likeCard = (req, res) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.message === '404') {
-        return res.status(404).send({ message: 'Карточка не найдена' });
+        throw new NotFound('Карточка не найдена');
       }
       if (err instanceof mongoose.CastError) {
-        return res.status(400).send({ message: 'id карточки не верно' });
+        throw new BadRequest('id карточки не верно');
       }
       return res.status(500).send({ message: err.message });
     });
@@ -66,10 +67,10 @@ module.exports.dislikeCard = (req, res) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.message === '404') {
-        return res.status(404).send({ message: 'Карточка не найдена' });
+        throw new NotFound('Карточка не найдена');
       }
       if (err instanceof mongoose.CastError) {
-        return res.status(400).send({ message: 'id карточки не верно' });
+        throw new BadRequest('id карточки не верно');
       }
       return res.status(500).send({ message: err.message });
     });
