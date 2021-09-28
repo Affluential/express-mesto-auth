@@ -1,70 +1,86 @@
-const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { NotFound, Conflict } = require('../errors/index');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((usersList) => res.status(200).send(usersList))
-    .catch((err) => {
-      res.status(500).send({ message: err.message });
-    });
+    .catch(next);
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   User.findById(req.params.id)
-    .orFail(new Error('404'))
+    .orFail(() => {
+      throw new NotFound('Пользователь не найден');
+    })
     .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.message === '404') {
-        return res.status(404).send({ message: 'Пользователь не найден' });
-      }
-      if (err instanceof mongoose.CastError) {
-        return res.status(400).send({ message: 'id пользователя не верно' });
-      }
-      return res.status(500).send({ message: err.message });
-    });
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные в метод создания пользователя',
-        });
-      } else {
-        res.status(500).send({ message: err.message });
+module.exports.createUser = (req, res, next) => {
+  const { name, about, avatar, email, password } = req.body;
+  User.findOne({ email })
+    .then((user) => {
+      if (user) {
+        throw new Conflict('Пользователь с такой почтой уже существует');
       }
-    });
+      bcrypt.hash(password, 10).then((hash) => {
+        User.create({
+          name,
+          about,
+          avatar,
+          email,
+          password: hash,
+        })
+          .then((newUser) =>
+            res.status(200).send({
+              _id: newUser._id,
+              name: newUser.name,
+              about: newUser.about,
+              avatar: newUser.avatar,
+              email: newUser.email,
+            }),
+          )
+          .catch(next);
+      });
+    })
+    .catch(next);
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', {
+        expiresIn: '7d',
+      });
+      res
+        .cookie('jwtToken', token, {
+          httpOnly: true,
+          maxAge: 3600000 * 24 * 7,
+        })
+        .status(200)
+        .send({ token });
+    })
+    .catch(next);
+};
+
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
     { name, about },
     { new: true, runValidators: true },
   )
-    .orFail(new Error('404'))
+    .orFail(() => {
+      throw new NotFound('Пользователь не найден');
+    })
     .then((user) => res.status(200).send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res
-          .status(400)
-          .send({ message: 'Переданы некорректные данные' });
-      }
-      if (err.message === '404') {
-        return res.status(404).send({ message: 'Пользователь не найден' });
-      }
-      if (err instanceof mongoose.CastError) {
-        return res.status(400).send({ message: 'id пользователя не верно' });
-      }
-      return res.status(500).send({ message: err.message });
-    });
+    .catch(next);
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -72,11 +88,14 @@ module.exports.updateAvatar = (req, res) => {
     { new: true, runValidators: true },
   )
     .then((user) => res.status(200).send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else {
-        res.status(500).send({ message: err.message });
-      }
-    });
+    .catch(next);
+};
+
+module.exports.getMe = (req, res, next) => {
+  const { _id } = req.body;
+  return User.findOne({ _id })
+    .then((user) => {
+      res.status(200).send(user);
+    })
+    .catch(next);
 };
