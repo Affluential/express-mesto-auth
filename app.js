@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const { celebrate, Joi } = require('celebrate');
 const { errors } = require('celebrate');
 const validator = require('validator');
+const cookieParser = require('cookie-parser');
 
 const { BadRequest, NotFound } = require('./errors/index');
 const cards = require('./routes/cards');
@@ -41,13 +42,15 @@ const urlIsValid = (url) => {
   }
   throw new BadRequest('Ссылка не верна');
 };
+
+app.use(cookieParser());
 app.post(
   '/signup',
   celebrate({
     body: {
       name: Joi.string().min(2).max(30),
       about: Joi.string().min(3).max(30),
-      avatar: Joi.string().required().custom(urlIsValid),
+      avatar: Joi.string().custom(urlIsValid),
       password: Joi.string().min(6).max(30).required(),
       email: Joi.string()
         .required()
