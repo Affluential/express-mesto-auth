@@ -1,5 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { Conflict } = require('../errors/index');
+const { Unauthorized } = require('../errors/index');
+
+const unauthorizedError = () => {
+  throw new Unauthorized('Для доступа необходима авторизация');
+};
 
 function extractToken(req) {
   const { cookie } = req.headers;
@@ -16,17 +20,17 @@ function extractToken(req) {
 module.exports = (req, res, next) => {
   const { authorization } = req.headers;
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    throw new Conflict('Не найдена информация об авторизации');
+    unauthorizedError(res);
   }
   const token = extractToken(req);
   if (!token) {
-    throw new Conflict('Авторизация не прошла');
+    unauthorizedError(res);
   } else {
     let payload;
     try {
       payload = jwt.verify(token, 'some-secret-key');
     } catch (err) {
-      throw new Conflict('Ошибка авторизации');
+      unauthorizedError(res);
     }
     req.user = payload;
     next();

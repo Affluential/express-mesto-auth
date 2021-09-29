@@ -5,6 +5,7 @@ const { celebrate, Joi } = require('celebrate');
 const { errors } = require('celebrate');
 const validator = require('validator');
 
+const { BadRequest, NotFound } = require('./errors/index');
 const cards = require('./routes/cards');
 const users = require('./routes/users');
 const { login, createUser } = require('./controllers/user');
@@ -33,13 +34,20 @@ mongoose.connection.on('open', () => {
   /* eslint-disable no-console */
   console.log('mestoDb connected!');
 });
-
+const urlIsValid = (url) => {
+  const result = validator.isURL(url);
+  if (result) {
+    return url;
+  }
+  throw new BadRequest('Ссылка не верна');
+};
 app.post(
   '/signup',
   celebrate({
     body: {
       name: Joi.string().min(2).max(30),
       about: Joi.string().min(3).max(30),
+      avatar: Joi.string().required().custom(urlIsValid),
       password: Joi.string().min(6).max(30).required(),
       email: Joi.string()
         .required()
@@ -70,12 +78,14 @@ app.post(
   }),
   login,
 );
-app.use('/cards', auth, cards);
-app.use('/users', auth, users);
+
+app.use('/', auth);
+app.use('/cards', cards);
+app.use('/users', users);
 app.use(errors());
 
-app.use((req, res) => {
-  res.status(404).send({ message: 'Запрашиваемый ресурс не найден' });
+app.use(() => {
+  throw new NotFound('Запрашиваемый ресурс не найден');
 });
 
 app.use(errorHandler);

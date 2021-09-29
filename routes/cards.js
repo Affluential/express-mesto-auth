@@ -21,14 +21,10 @@ const urlIsValid = (url) => {
 
 const cardIdIsValid = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().alphanum().length(24),
+    cardId: Joi.string().hex().length(24).required(),
   }),
 });
-const deleteCardIsValid = celebrate({
-  params: Joi.object().keys({
-    cardId: Joi.string().alphanum().length(24),
-  }),
-});
+
 const createCardIsValid = celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),
@@ -38,7 +34,7 @@ const createCardIsValid = celebrate({
 
 router.get('/', getCards);
 router.post('/', createCardIsValid, createCard);
-router.delete('/:cardId', deleteCardIsValid, deleteCard);
+router.delete('/:cardId', cardIdIsValid, deleteCard);
 router.put('/:cardId/likes', cardIdIsValid, likeCard);
 router.delete('/:cardId/likes', cardIdIsValid, dislikeCard);
 

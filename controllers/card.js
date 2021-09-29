@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
 const Card = require('../models/card');
-const { BadRequest, NotFound } = require('../errors/index');
+const { BadRequest, NotFound, Forbidden } = require('../errors/index');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
@@ -23,55 +22,45 @@ module.exports.createCard = (req, res) => {
     });
 };
 
-module.exports.deleteCard = (req, res) => {
-  Card.findByIdAndDelete(req.params.cardId)
-    .orFail(new Error('404'))
-    .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err.message === '404') {
-        throw new NotFound('Карточка не найдена');
+module.exports.deleteCard = (req, res, next) => {
+  Card.findById(req.params.cardId)
+    .orFail(new NotFound('Карточка не найдена'))
+    .then((card) => {
+      if (req.user._id.toString() === card.owner.toString()) {
+        card.remove();
+        return res.status(200).send({ message: 'Карточка удалена' });
       }
-      if (err instanceof mongoose.CastError) {
-        throw new BadRequest('id карточки не верно');
-      }
-      return res.status(500).send({ message: err.message });
-    });
+      throw new Forbidden('Нельзя удалять чужие карточки');
+    })
+    .catch(next);
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(new Error('404'))
-    .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err.message === '404') {
+    .then((card) => {
+      if (!card) {
         throw new NotFound('Карточка не найдена');
       }
-      if (err instanceof mongoose.CastError) {
-        throw new BadRequest('id карточки не верно');
-      }
-      return res.status(500).send({ message: err.message });
-    });
+      res.send({ data: card });
+    })
+    .catch(next);
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(new Error('404'))
-    .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err.message === '404') {
+    .then((card) => {
+      if (!card) {
         throw new NotFound('Карточка не найдена');
       }
-      if (err instanceof mongoose.CastError) {
-        throw new BadRequest('id карточки не верно');
-      }
-      return res.status(500).send({ message: err.message });
-    });
+      res.send({ data: card });
+    })
+    .catch(next);
 };
