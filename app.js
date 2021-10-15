@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
@@ -12,6 +13,7 @@ const users = require('./routes/users');
 const { login, createUser } = require('./controllers/user');
 const errorHandler = require('./middlewares/errorHandler');
 const auth = require('./middlewares/auth');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const app = express();
 const { PORT = 3000 } = process.env;
@@ -43,7 +45,15 @@ const urlIsValid = (url) => {
   throw new BadRequest('Ссылка не верна');
 };
 
+app.use(requestLogger);
 app.use(cookieParser());
+
+app.get('/crash-test', () => {
+  setTimeout(() => {
+    throw new Error('Сервер сейчас упадёт');
+  }, 0);
+});
+
 app.post(
   '/signup',
   celebrate({
@@ -91,6 +101,7 @@ app.use(() => {
   throw new NotFound('Запрашиваемый ресурс не найден');
 });
 
+app.use(errorLogger);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
