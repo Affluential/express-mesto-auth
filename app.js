@@ -6,6 +6,7 @@ const { celebrate, Joi } = require('celebrate');
 const { errors } = require('celebrate');
 const validator = require('validator');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
 
 const { BadRequest, NotFound } = require('./errors/index');
 const cards = require('./routes/cards');
@@ -25,6 +26,12 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const corsOptions = {
+  origin: 'http://localhost:3001',
+  credentials: true,
+};
+app.use(cors(corsOptions));
+/* app.use(cors()); */
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,

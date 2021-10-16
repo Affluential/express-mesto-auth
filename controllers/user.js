@@ -64,7 +64,8 @@ module.exports.login = (req, res, next) => {
         .cookie('jwtToken', token, {
           httpOnly: true,
           maxAge: 3600000 * 24 * 7,
-          sameSite: true,
+          sameSite: 'None',
+          /* secure: true, */
         })
         .status(200)
         .send({ token });
@@ -98,7 +99,7 @@ module.exports.updateAvatar = (req, res, next) => {
 };
 
 module.exports.getMe = (req, res, next) => {
-  const { _id } = req.body;
+  const { _id } = req.user;
   return User.findOne({ _id })
     .then((user) => {
       res.status(200).send(user);

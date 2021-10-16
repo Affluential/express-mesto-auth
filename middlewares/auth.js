@@ -7,6 +7,7 @@ const unauthorizedError = () => {
 };
 
 module.exports = (req, res, next) => {
+  console.log(req.cookies);
   const { jwtToken } = req.cookies;
   if (!jwtToken) {
     unauthorizedError(res);
