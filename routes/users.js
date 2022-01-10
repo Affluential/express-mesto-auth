@@ -9,6 +9,7 @@ const {
   updateUser,
   updateAvatar,
   getMe,
+  logout,
 } = require('../controllers/user');
 
 const urlIsValid = (url) => {
@@ -36,6 +37,7 @@ const userIdIsValid = celebrate({
   }),
 });
 
+router.get('/logout', logout);
 router.get('/', getUsers);
 router.get('/me', getMe);
 router.get('/:userId', userIdIsValid, getUser);

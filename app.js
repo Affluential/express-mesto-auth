@@ -7,6 +7,7 @@ const { errors } = require('celebrate');
 const validator = require('validator');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const helmet = require('helmet');
 
 const { BadRequest, NotFound } = require('./errors/index');
 const cards = require('./routes/cards');
@@ -17,6 +18,7 @@ const auth = require('./middlewares/auth');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const app = express();
+app.use(helmet());
 const { PORT = 3000 } = process.env;
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
